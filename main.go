@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -8,14 +9,21 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-var configPath = "config.yaml"
+var (
+	config = flag.String("config", "config.yaml", "Config file")
+	addr   = flag.String("addr", ":8080", "Address to listen")
+)
 
 func main() {
-	configs, err := loadConfig(configPath)
+	flag.Parse()
+
+	configs, err := loadConfig(*config)
 	if err != nil {
 		log.Fatal("can not load config; ", err)
 	}
-	err = http.ListenAndServe(":8080", &redirectHandler{configs})
+
+	log.Printf("start server on %s\n", *addr)
+	err = http.ListenAndServe(*addr, &redirectHandler{configs})
 	if err != nil {
 		log.Fatal("can not start server; ", err)
 	}
