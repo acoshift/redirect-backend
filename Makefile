@@ -1,5 +1,5 @@
 REGISTRY=acoshift/redirect-backend
-TAG=1.1
+TAG=1.2
 
 dev:
 	go run main.go
