@@ -1,10 +1,15 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"gopkg.in/yaml.v2"
 )
@@ -22,10 +27,28 @@ func main() {
 		log.Fatal("can not load config; ", err)
 	}
 
-	log.Printf("start server on %s\n", *addr)
-	err = http.ListenAndServe(*addr, &redirectHandler{configs})
+	srv := http.Server{
+		Addr:    *addr,
+		Handler: &redirectHandler{configs},
+	}
+
+	go func() {
+		log.Printf("start server on %s\n", *addr)
+		err = srv.ListenAndServe()
+		if err != http.ErrServerClosed {
+			log.Fatal("can not start server; ", err)
+		}
+	}()
+
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, syscall.SIGTERM)
+	<-stop
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	err = srv.Shutdown(ctx)
 	if err != nil {
-		log.Fatal("can not start server; ", err)
+		log.Println("can not shutdown server; ", err)
 	}
 }
 
