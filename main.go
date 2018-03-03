@@ -27,9 +27,13 @@ func main() {
 		log.Fatal("can not load config; ", err)
 	}
 
+	mux := http.NewServeMux()
+	mux.HandleFunc("/healthz", healthz)
+	mux.Handle("/", &redirectHandler{configs})
+
 	srv := http.Server{
 		Addr:    *addr,
-		Handler: &redirectHandler{configs},
+		Handler: mux,
 	}
 
 	go func() {
@@ -96,4 +100,8 @@ func getHost(r *http.Request) string {
 		host = r.Host
 	}
 	return host
+}
+
+func healthz(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
 }
